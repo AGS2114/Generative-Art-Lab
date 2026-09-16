@@ -3,13 +3,10 @@
 import { useEffect, useRef } from "react";
 
 /**
- * useCanvasLoop: a requestAnimationFrame loop hook shared across every
- * sketch under /experiments. Clamps delta-time so a backgrounded tab
- * or a dropped frame never causes a visible pop/jump when it resumes -
- * build this in once rather than retrofitting it into every sketch.
+ * useCanvasLoop - a requestAnimationFrame loop hook shared across every sketch under /experiments. Clamps delta-time so a backgrounded tab
+ * or a dropped frame never causes a visible pop/jump when it resumes - build this in once rather than retrofitting it into every sketch.
  *
- * `draw` receives the 2D context, the clamped delta (seconds) since
- * the last frame, and the total elapsed time (seconds).
+ * `draw` receives the 2D context, the clamped delta (seconds) since the last frame, and the total elapsed time (seconds).
  */
 export function useCanvasLoop(
   draw: (ctx: CanvasRenderingContext2D, dt: number, t: number) => void,
@@ -31,7 +28,6 @@ export function useCanvasLoop(
 
     const tick = (now: number) => {
       if (cancelled) return;
-      // Clamp so slow frames / tab-switches never cause a visible pop.
       const dt = Math.min((now - last) / 1000, 1 / 30);
       last = now;
       elapsed += dt;

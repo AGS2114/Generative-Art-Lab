@@ -42,7 +42,6 @@ interface ColorControl {
 interface ButtonGroupControl {
   type: "buttonGroup";
   key: string;
-  /** Optional label above the button row (omit for a bare row, e.g. a lone reset). */
   label?: string;
   buttons: { label: string; onClick: () => void }[];
 }
@@ -51,7 +50,6 @@ interface GroupControl {
   type: "group";
   key: string;
   label: string;
-  /** Collapsed by default unless this is true. */
   defaultOpen?: boolean;
   controls: Control[];
 }
@@ -67,7 +65,6 @@ export type Control =
 interface ControlPanelProps {
   title: string;
   controls?: Control[];
-  /** Extra freeform content, for anything not covered by the control types above. */
   children?: ReactNode;
 }
 
@@ -121,7 +118,6 @@ const selectStyle: React.CSSProperties = {
   fontSize: 11,
 };
 
-/** One control row. Recursive: a `group` renders nested ControlRows. */
 function ControlRow({ c }: { c: Control }) {
   const [open, setOpen] = useState(
     c.type === "group" ? (c.defaultOpen ?? false) : false,
@@ -277,10 +273,8 @@ function ControlRow({ c }: { c: Control }) {
 }
 
 /**
- * ControlPanel: the single shared control surface for every /experiments
- * sketch. Sketches declare controls as data (sliders, toggles, selects,
- * colour swatches, button rows, and collapsible groups) so each one gets
- * identical chrome, spacing, and show/hide behaviour. Groups keep long
+ * ControlPanel - the single shared control surface for every /experiments sketch. Sketches declare controls as data (sliders, toggles, selects,
+ * colour swatches, button rows, and collapsible groups) so each one gets identical chrome, spacing, and show/hide behaviour. Groups keep long
  * parameter lists from turning the panel into one endless scroll.
  */
 export default function ControlPanel({

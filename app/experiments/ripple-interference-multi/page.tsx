@@ -75,8 +75,6 @@ const PALETTES: Record<string, GradientStop[]> = {
     { pos: 0.84, color: [48, 88, 116] },
     { pos: 1.0, color: [10, 18, 28] },
   ],
-  // Near-greyscale with a single warm accent band - the ripple structure
-  // reads as form rather than colour, which suits the print-like stills.
   mono: [
     { pos: 0.0, color: [18, 18, 20] },
     { pos: 0.35, color: [120, 120, 124] },
@@ -336,8 +334,6 @@ export default function RippleInterferenceMultiPage() {
         },
       ],
     },
-    // Each source's sliders live inside their own collapsible group,
-    // collapsed by default, instead of five flat sliders per source.
     ...sources.map<Control>((s, i) => ({
       type: "group",
       key: `source-group-${i}`,

@@ -54,7 +54,7 @@ const EXPERIMENTS: Experiment[] = [
   },
   {
     slug: "mycelium",
-    name: "Mycelium / Space Colonization",
+    name: "Mycelium / Space Colonisation",
     status: "todo",
     blurb: "Branching growth toward scattered attraction points.",
   },

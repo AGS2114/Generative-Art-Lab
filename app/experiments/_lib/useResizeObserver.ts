@@ -3,15 +3,12 @@
 import { RefObject, useEffect } from "react";
 
 interface ResizeOptions {
-  /** Cap the backing-store DPR so huge screens don't tank perf. Default 1.5. */
   maxDpr?: number;
 }
 
 /**
- * useResizeObserver: keeps a <canvas> element's backing-store size
- * (canvas.width/height) in sync with its CSS-rendered size and the
- * device pixel ratio. Calls `onResize(width, height, dpr)` once on
- * mount and again on every resize.
+ * useResizeObserver: keeps a <canvas> element's backing-store size (canvas.width/height) in sync with its CSS-rendered size and the
+ * device pixel ratio. Calls `onResize(width, height, dpr)` once on mount and again on every resize.
  */
 export function useResizeObserver(
   canvasRef: RefObject<HTMLCanvasElement | null>,
@@ -42,6 +39,5 @@ export function useResizeObserver(
       observer.disconnect();
       window.removeEventListener("resize", resize);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasRef, maxDpr]);
 }

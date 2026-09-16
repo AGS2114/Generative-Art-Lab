@@ -59,7 +59,7 @@ art and creative coding:
 > band" of alternating rects, and scattered markers constrained to an
 > annulus - framed as a print, with a documented design process.
 >
-> **1.6 Mycelium / Space Colonization** - Branching growth algorithm:
+> **1.6 Mycelium / Space Colonisation** - Branching growth algorithm:
 > scattered attraction points pull nearby branch nodes toward them, new
 > nodes spawn along the accumulated direction, and consumed attraction
 > points are removed, producing an organic branching structure over time.
@@ -80,7 +80,7 @@ art and creative coding:
 - [ ] **1.2 - Generative Wave / Particle Field**
 - [ ] **1.4 - Recursive Box/Grid Art**
 - [ ] **1.5 - Radial print**
-- [ ] **1.6 - Mycelium / Space Colonization**
+- [ ] **1.6 - Mycelium / Space Colonisation**
 - [ ] **1.7 - Procedural Flower Growth (L-system)**
 
 ## Experiments index

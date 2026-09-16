@@ -4,29 +4,21 @@ import { useEffect, useRef } from "react";
 import { useResizeObserver } from "../_lib/useResizeObserver";
 
 export interface IQPalette {
-  /** Base offset (DC). */
   a: [number, number, number];
-  /** Amplitude around the base. */
   b: [number, number, number];
-  /** Frequency of each channel's cosine cycle. */
   c: [number, number, number];
-  /** Phase offset of each channel's cosine cycle. */
   d: [number, number, number];
 }
 
 export interface RippleSource {
-  /** Origin, 0-1 of width/height. Can sit outside [0,1] to originate off-frame. */
   x: number;
   y: number;
-  /** Spacing between rings for this source. */
   frequency: number;
-  /** Phase speed for this source. */
   speed: number;
-  /** Relative contribution of this source to the summed field. */
   amplitude: number;
 }
 
-/** Matches the CPU version's FieldMode; index order must match FIELD_MODES below. */
+/** Matches the CPU version's FieldMode; index order must match FIELD_MODES below */
 export type FieldMode = "sine" | "cosine" | "abs" | "squared" | "decay";
 
 export const FIELD_MODES: FieldMode[] = [
@@ -54,7 +46,7 @@ interface RippleShaderProps {
   axisMix?: number;
   /** Power curve on the eased displacement. >1 flattens, <1 exaggerates banding. */
   contrast?: number;
-  /** Normalized 0-1 RGB the caustic highlights blend toward. */
+  /** Normalised 0-1 RGB the caustic highlights blend toward. */
   causticColor?: [number, number, number];
   /** Distance attenuation used by the `decay` field mode. */
   falloff?: number;
@@ -85,8 +77,7 @@ void main() {
 }
 `;
 
-// Every pixel is computed independently, in parallel, on the GPU -
-// no step/downsample hack needed the way the CPU canvas version
+// Every pixel is computed independently, in parallel, on the GPU - no step/downsample hack needed the way the CPU canvas version
 // required to stay smooth at full resolution.
 const FRAGMENT_SRC = `#version 300 es
 precision highp float;
@@ -119,7 +110,7 @@ vec3 iqPalette(float t) {
   return uPalA + uPalB * cos(6.28318530718 * (uPalC * t + uPalD));
 }
 
-// Wave shape per source. Index order matches FIELD_MODES in the TS file.
+// Wave shape per source. Index order matches FIELD_MODES in the TS file
 float shape(float phase, float dist) {
   if (uFieldMode == 1) return cos(phase);
   if (uFieldMode == 2) return abs(sin(phase)) * 2.0 - 1.0;
@@ -139,7 +130,7 @@ float field(vec2 p, float t) {
   return sum;
 }
 
-// Cheap hash for per-pixel, per-frame grain.
+// Cheap hash for per-pixel, per-frame grain
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453123);
 }
@@ -162,16 +153,14 @@ void main() {
   }
   float displacement = (eased - 0.5) * 2.0 * uRippleStrength;
 
-  // gl_FragCoord.y has its origin at the bottom of the viewport and
-  // increases upward, whereas the CPU canvas version's y is a top-down
-  // pixel coordinate. Flip here so baseT=0 is the top of the frame in
-  // both versions and the palette isn't read upside-down.
+  // gl_FragCoord.y has its origin at the bottom of the viewport and increases upward, whereas the CPU canvas version's y is a top-down
+  // pixel coordinate. Flip here so baseT=0 is the top of the frame in both versions and the palette isn't read upside-down.
   float vertical = 1.0 - fragPx.y / uResolution.y;
   float horizontal = fragPx.x / uResolution.x;
   float baseT = mix(vertical, horizontal, uAxisMix) + drift;
   vec3 col = iqPalette(baseT + displacement);
 
-  // Caustic term: steep local slope of the field => bright cusp.
+  // Caustic term: steep local slope of the field => bright cusp
   float sampleStep = 3.0;
   float fx1 = field(fragPx + vec2(sampleStep, 0.0), t);
   float fy1 = field(fragPx + vec2(0.0, sampleStep), t);
@@ -213,17 +202,12 @@ function compileShader(
 }
 
 /**
- * RippleInterferenceShader: the same summed multi-source ripple field,
- * caustic pass, grain, and vignette as the CPU canvas version, but
- * evaluated per-pixel on the GPU via a WebGL2 fragment shader instead
- * of a JS loop over an ImageData buffer. Every pixel is independent, so
- * there's no need for the CPU version's step=2 block-fill downsampling -
- * it renders at full backing-store resolution every frame.
+ * RippleInterferenceShader: the same summed multi-source ripple field, caustic pass, grain, and vignette as the CPU canvas version, but
+ * evaluated per-pixel on the GPU via a WebGL2 fragment shader instead of a JS loop over an ImageData buffer. Every pixel is independent, so
+ * there's no need for the CPU version's step=2 block-fill downsampling - it renders at full backing-store resolution every frame.
  *
- * Color comes from an Inigo Quilez-style cosine palette
- * (a + b*cos(2*pi*(c*t+d))) rather than interpolated gradient stops,
- * which is what lets it wrap and wash between hues continuously
- * instead of being locked to a handful of fixed stops.
+ * Color comes from an Inigo Quilez-style cosine palette (a + b*cos(2*pi*(c*t+d))) rather than interpolated gradient stops,
+ * which is what lets it wrap and wash between hues continuously instead of being locked to a handful of fixed stops.
  */
 export default function RippleInterferenceShader({
   palette = DEFAULT_PALETTE,
@@ -246,8 +230,7 @@ export default function RippleInterferenceShader({
   const uniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({});
   const sizeRef = useRef({ w: 1, h: 1 });
 
-  // Keep latest prop values available inside the rAF loop without
-  // re-creating the GL program on every render.
+  // Keep latest prop values available inside the rAF loop without re-creating the GL program on every render.
   const propsRef = useRef({
     palette,
     sources,
@@ -312,8 +295,7 @@ export default function RippleInterferenceShader({
     }
     gl.useProgram(program);
 
-    // Full-screen triangle - no vertex buffer of quads needed, the
-    // fragment shader does all the work.
+    // Full-screen triangle - no vertex buffer of quads needed, the fragment shader does all the work.
     const posLoc = gl.getAttribLocation(program, "aPos");
     const vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
@@ -353,10 +335,8 @@ export default function RippleInterferenceShader({
 
     let rafId = 0;
     let cancelled = false;
-    // Same dt-clamp approach as useCanvasLoop (cap at 1/30s so a
-    // backgrounded tab or dropped frame never pops on resume),
-    // reimplemented here rather than reused directly because
-    // useCanvasLoop hands back a 2D context - this sketch owns a
+    // Same dt-clamp approach as useCanvasLoop (cap at 1/30s so a backgrounded tab or dropped frame never pops on resume),
+    // reimplemented here rather than reused directly because useCanvasLoop hands back a 2D context - this sketch owns a
     // WebGL2 context and drives its own uniform uploads per frame.
     let last = performance.now();
     let elapsed = 0;
@@ -403,7 +383,7 @@ export default function RippleInterferenceShader({
       for (let i = 0; i < count; i++) {
         const s = p.sources[i];
         sourceVec[i * 4 + 0] = s.x * w;
-        sourceVec[i * 4 + 1] = (1 - s.y) * h; // flip: source y is top-down
+        sourceVec[i * 4 + 1] = (1 - s.y) * h;
         sourceVec[i * 4 + 2] = s.frequency;
         sourceVec[i * 4 + 3] = s.speed;
         amps[i] = s.amplitude ?? 1;
@@ -435,7 +415,6 @@ export default function RippleInterferenceShader({
       gl.deleteBuffer(vbo);
     };
     // Intentionally run once - per-frame values are read from propsRef.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -8,53 +8,36 @@ export interface GradientStop {
 }
 
 export interface RippleSource {
-  /** Origin, 0-1 of width/height. Can sit outside [0,1] to originate off-frame. */
   x: number;
   y: number;
-  /** Spacing between rings for this source. */
   frequency: number;
-  /** Phase speed for this source. */
   speed: number;
-  /** Relative contribution of this source to the summed field. */
   amplitude: number;
 }
 
 /**
  * How each source's wave is shaped before summing.
- * - sine:    plain sin() - smooth, symmetric rings (the original look)
- * - cosine:  quarter-phase shift; rings land differently against the palette
- * - abs:     |sin()| - rings only ever brighten, giving harder-edged bands
- * - squared: sin()^2 - similar to abs but with a softer trough and sharper crest
- * - decay:   sin() attenuated by 1/(1 + dist*falloff) - waves fade with distance
- *            instead of staying full strength to the frame edge
+ * - sine - plain sin() - smooth, symmetric rings (the original look)
+ * - cosine - quarter-phase shift; rings land differently against the palette
+ * - abs - |sin()| - rings only ever brighten, giving harder-edged bands
+ * - squared - sin()^2 - similar to abs but with a softer trough and sharper crest
+ * - decay - sin() attenuated by 1/(1 + dist*falloff) - waves fade with distance instead of staying full strength to the frame edge
  */
 export type FieldMode = "sine" | "cosine" | "abs" | "squared" | "decay";
 
 interface MultiRippleProps {
   stops?: GradientStop[];
   sources?: RippleSource[];
-  /** How strongly the summed ripple field displaces the gradient sample point. */
   rippleStrength?: number;
-  /** Slow overall gradient drift, independent of the ripple. */
   driftSpeed?: number;
-  /** Brightens pixels where the field's local gradient is steep - */
-  /** this is what produces the cusp/caustic streaks and lattice moiré. */
   causticStrength?: number;
-  /** 0-1 amount of per-pixel luminance grain overlaid on the result. */
   grainAmount?: number;
-  /** Wave shape used per source before summing. */
   fieldMode?: FieldMode;
-  /** 0 = gradient runs top-to-bottom, 1 = left-to-right, 0.5 = diagonal. */
   axisMix?: number;
-  /** Power curve on the eased displacement. >1 flattens, <1 exaggerates banding. */
   contrast?: number;
-  /** RGB the caustic highlights blend toward (defaults to white). */
   causticColor?: [number, number, number];
-  /** Distance attenuation used by the `decay` field mode. */
   falloff?: number;
-  /** Global multiplier on animation speed. 0 freezes the frame. */
   timeScale?: number;
-  /** 0-1 edge darkening. 0 disables. */
   vignette?: number;
 }
 
@@ -100,14 +83,10 @@ function sampleGradient(
 }
 
 /**
- * MultiRippleInterference: several concentric ripple sources summed
- * together into one displacement field. Overlapping waves reinforce
- * or cancel, warping what would otherwise be perfectly circular rings
- * into the bent/braided/lattice shapes you get from real wave
- * interference. A caustic pass brightens pixels where the summed
- * field's local gradient is steepest (ring-compression zones), which
- * is what produces the bright cusp streaks and small lens-like
- * ellipses. Grain and an optional vignette finish the frame.
+ * MultiRippleInterference: several concentric ripple sources summed together into one displacement field. Overlapping waves reinforce
+ * or cancel, warping what would otherwise be perfectly circular rings into the bent/braided/lattice shapes you get from real wave
+ * interference. A caustic pass brightens pixels where the summed field's local gradient is steepest (ring-compression zones), which
+ * is what produces the bright cusp streaks and small lens-like ellipses. Grain and an optional vignette finish the frame.
  */
 export default function MultiRippleInterference({
   stops = DEFAULT_STOPS,
@@ -160,14 +139,11 @@ export default function MultiRippleInterference({
     let lastNow = performance.now();
     let elapsed = 0;
 
-    // Shape a single source's raw phase into its contribution.
     function shape(phase: number, dist: number): number {
       switch (fieldMode) {
         case "cosine":
           return Math.cos(phase);
         case "abs":
-          // Remapped to [-1,1] so it still swings both ways around the
-          // palette midpoint rather than biasing everything upward.
           return Math.abs(Math.sin(phase)) * 2 - 1;
         case "squared": {
           const s = Math.sin(phase);
@@ -181,7 +157,7 @@ export default function MultiRippleInterference({
       }
     }
 
-    // Field function: summed ripple contribution from every source at (x, y).
+    // Field function - summed ripple contribution from every source at (x, y).
     function field(x: number, y: number, t: number): number {
       let sum = 0;
       for (const s of sources) {
@@ -210,7 +186,7 @@ export default function MultiRippleInterference({
       const [cr, cg, cb] = causticColor;
 
       const step = 2;
-      const sampleStep = 3; // for the finite-difference gradient (caustic pass)
+      const sampleStep = 3;
       const halfW = W / 2;
       const halfH = H / 2;
       const maxDistFromCentre = Math.sqrt(halfW * halfW + halfH * halfH);
@@ -218,12 +194,11 @@ export default function MultiRippleInterference({
       for (let y = 0; y < H; y += step) {
         for (let x = 0; x < W; x += step) {
           const raw = field(x, y, t);
-          const norm = raw / Math.max(maxAmp, 0.0001); // roughly [-1, 1]
+          const norm = raw / Math.max(maxAmp, 0.0001);
 
           const eased01 = norm * 0.5 + 0.5;
           let eased = eased01 * eased01 * (3 - 2 * eased01);
-          // Contrast as a power curve about the 0.5 midpoint, so the
-          // banding can be pushed harder or washed out without shifting hue.
+          // Contrast as a power curve about the 0.5 midpoint, so the banding can be pushed harder or washed out without shifting hue.
           if (contrast !== 1) {
             const centred = eased - 0.5;
             eased =
@@ -233,12 +208,8 @@ export default function MultiRippleInterference({
                 0.5;
           }
           const displacement = (eased - 0.5) * 2 * rippleStrength;
-
-          // Axis the gradient travels along: 0 = vertical, 1 = horizontal.
           const baseT = lerp(y / H, x / W, axisMix) + drift;
           const [r, g, b] = sampleGradient(stops, baseT + displacement);
-
-          // Caustic term: steep local slope of the field => bright cusp.
           const fx1 = field(x + sampleStep, y, t);
           const fy1 = field(x, y + sampleStep, t);
           const gradMag = Math.abs(fx1 - raw) + Math.abs(fy1 - raw);
@@ -248,7 +219,6 @@ export default function MultiRippleInterference({
           let gg = lerp(g, cg, caustic);
           let bb = lerp(b, cb, caustic);
 
-          // Edge darkening.
           if (vignette > 0) {
             const ddx = (x - halfW) / maxDistFromCentre;
             const ddy = (y - halfH) / maxDistFromCentre;
@@ -259,7 +229,6 @@ export default function MultiRippleInterference({
             bb *= v;
           }
 
-          // Per-pixel grain, redrawn each frame for a filmic dither look.
           if (grainAmount > 0) {
             const n = (Math.random() - 0.5) * 255 * grainAmount;
             rr += n;
