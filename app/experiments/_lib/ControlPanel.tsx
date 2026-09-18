@@ -294,7 +294,7 @@ export default function ControlPanel({
           right: 16,
           background: "transparent",
           border: "none",
-          color: "black",
+          color: "DARKGRAY",
           fontFamily: "monospace",
           fontSize: 11,
           letterSpacing: "0.08em",

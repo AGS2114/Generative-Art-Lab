@@ -49,6 +49,8 @@ art and creative coding:
 > braided patterns, and bright cusp/caustic streaks where waves reinforce;
 > (b) Gray-Scott reaction-diffusion, simulating two virtual chemicals to
 > produce organic spot/worm/maze patterns depending on feed/kill parameters.
+> _(1.3(b) was later replaced with a wave-interference glyph field - see
+> the progress checklist below.)_
 >
 > **1.4 Recursive Box/Grid Art** - Randomised recursive subdivision of a
 > rectangle along its longer axis, with a registry of fill styles (solid,
@@ -75,7 +77,7 @@ art and creative coding:
 - [x] **1.3(a) - Ripple / Interference** - single-source colour interference ripples, 5 gradient presets (sunset, aegean, dusk, citrus, ice)
 - [x] **1.3(a) - Ripple / Interference (multi-source)** - multiple summed ripple sources producing braided rings, lattice moiré, and caustic cusps; live controls for source count, frequency, speed, ripple strength, caustic brightness, and grain; all 8 palettes (adds coral, pastel, flame)
 - [x] **1.3(a) - Ripple / Interference (WebGL shader)** - raw WebGL2 fragment-shader rewrite of the multi-source ripple field: per-pixel `sin(dist * frequency - t * speed)` summed across up to 8 sources, coloured via an Inigo Quilez cosine palette (`a + b*cos(2π(c*t+d))`) instead of gradient stops, so hues wash continuously rather than stepping between fixed stops; same caustic/grain/vignette finishing pass as the CPU version, but evaluated at full resolution every frame since each pixel is independent on the GPU; own route with sliders for source position/frequency/speed/amplitude, ripple strength, and palette; reimplements the shared scaffold's dt-clamp locally since this sketch drives a WebGL2 context rather than the 2D context `useCanvasLoop` expects
-- [ ] **1.3(b) - Reaction-diffusion** - Gray-Scott organic growth variant
+- [x] **1.3(b) - Reaction-diffusion → replaced by Glyph Field** - the Gray-Scott implementation was built and worked, but the resulting patterns were noticeably less compelling than a second experiment built alongside it: a wave-interference field (2D scalar wave equation on the GPU, ping-pong framebuffers) rendered as a live grid of glyphs whose shape/size respond to local wave amplitude, with pointer plucking, obstacle walls, and preset wall patterns (spiral, double-slit, rings, labyrinth). Glyph Field replaces this slot rather than sitting alongside it - the Gray-Scott version was retired in its favour
 - [ ] **1.1 - ASCII Art Suite** - image-to-ASCII converter + ASCII orb
 - [ ] **1.2 - Generative Wave / Particle Field**
 - [ ] **1.4 - Recursive Box/Grid Art**

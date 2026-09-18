@@ -1,10 +1,10 @@
 import Link from "next/link";
-import MultiRippleInterference from "./experiments/ripple-interference-multi/MultiRippleInterference";
+import RippleInterferenceShader from "./experiments/ripple-interference-shader/RippleInterferenceShader";
 
 export default function Home() {
   return (
     <main style={{ width: "100vw", height: "100vh", position: "relative" }}>
-      <MultiRippleInterference
+      <RippleInterferenceShader
         sources={[
           { x: 0.62, y: 0.4, frequency: 0.05, speed: 0.4, amplitude: 1 },
         ]}

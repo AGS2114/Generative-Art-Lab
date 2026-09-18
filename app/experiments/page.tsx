@@ -35,10 +35,11 @@ const EXPERIMENTS: Experiment[] = [
     blurb: "Grid of points animated with sine + simplex noise.",
   },
   {
-    slug: "reaction-diffusion",
-    name: "Cellular / Organic Growth",
-    status: "todo",
-    blurb: "Gray-Scott reaction-diffusion — spots, worms, mazes.",
+    slug: "glyph-field",
+    name: "Glyph Field (wave interference)",
+    status: "done",
+    blurb:
+      "Wave-interference field on the GPU, rendered as a live grid of glyphs that react to amplitude - pluck it, wall it off, watch it ring.",
   },
   {
     slug: "box-grid",
