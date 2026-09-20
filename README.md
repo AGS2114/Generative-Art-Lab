@@ -31,7 +31,8 @@ Then visit `http://localhost:3000` for the landing screen, or
 ## Original spec
 
 The project started from a single brief covering seven areas of generative
-art and creative coding:
+art and creative coding. One additional experiment (Sonic Field) was added
+later, outside this original spec - see the progress checklist below.
 
 > **1.1 ASCII Art Suite** - Image → ASCII converter (brightness-to-character
 > mapping, adjustable grid resolution, colour mode, export) plus an ASCII
@@ -78,6 +79,7 @@ art and creative coding:
 - [x] **1.3(a) - Ripple / Interference (multi-source)** - multiple summed ripple sources producing braided rings, lattice moiré, and caustic cusps; live controls for source count, frequency, speed, ripple strength, caustic brightness, and grain; all 8 palettes (adds coral, pastel, flame)
 - [x] **1.3(a) - Ripple / Interference (WebGL shader)** - raw WebGL2 fragment-shader rewrite of the multi-source ripple field: per-pixel `sin(dist * frequency - t * speed)` summed across up to 8 sources, coloured via an Inigo Quilez cosine palette (`a + b*cos(2π(c*t+d))`) instead of gradient stops, so hues wash continuously rather than stepping between fixed stops; same caustic/grain/vignette finishing pass as the CPU version, but evaluated at full resolution every frame since each pixel is independent on the GPU; own route with sliders for source position/frequency/speed/amplitude, ripple strength, and palette; reimplements the shared scaffold's dt-clamp locally since this sketch drives a WebGL2 context rather than the 2D context `useCanvasLoop` expects
 - [x] **1.3(b) - Reaction-diffusion → replaced by Glyph Field** - the Gray-Scott implementation was built and worked, but the resulting patterns were noticeably less compelling than a second experiment built alongside it: a wave-interference field (2D scalar wave equation on the GPU, ping-pong framebuffers) rendered as a live grid of glyphs whose shape/size respond to local wave amplitude, with pointer plucking, obstacle walls, and preset wall patterns (spiral, double-slit, rings, labyrinth). Glyph Field replaces this slot rather than sitting alongside it - the Gray-Scott version was retired in its favour
+- [x] **1.3(b) Sonic Field - audio-reactive wave field (new, outside the original spec)** - a second wave-interference field, this time driven by an original Web Audio synth instead of pointer input: a tempo/key/scale/mood picker feeds a generative sequencer (chord progression, phrase-length rhythm cell, and a chord-tone-aware melody walk all derived from a single reproducible seed), whose lead, chord, and bass voices each pluck the shared field via a `NoteEvent` queue. Phrases evolve in density/loudness across repeats rather than looping identically, a seed can be copied and reloaded to reproduce a specific generated passage, and pointer plucks are layered into the same queue so a user can play alongside the generator. Two render modes (a glyph grid, reusing Glyph Field's rendering approach, and a blurred soft-luminance field) and a set of colour features: a hue-shift/tint/glow palette system with named presets, four glyph sets (geometric, rings, crosses, organic wobbled blobs), and a hue channel carried in the sim state itself so colour tracks _which voice_ - lead, chord, bass, or a manual pluck - last rippled a given point, not just how loud it is
 - [ ] **1.1 - ASCII Art Suite** - image-to-ASCII converter + ASCII orb
 - [ ] **1.2 - Generative Wave / Particle Field**
 - [ ] **1.4 - Recursive Box/Grid Art**

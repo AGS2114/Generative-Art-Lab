@@ -9,6 +9,18 @@ interface Experiment {
 
 const EXPERIMENTS: Experiment[] = [
   {
+    slug: "ascii",
+    name: "ASCII Art Suite",
+    status: "todo",
+    blurb: "Image → ASCII converter + a shaded, noise-mottled ASCII orb.",
+  },
+  {
+    slug: "wave-field",
+    name: "Generative Wave / Particle Field",
+    status: "todo",
+    blurb: "Grid of points animated with sine + simplex noise.",
+  },
+  {
     slug: "ripple-interference-multi",
     name: "Ripple / Interference (multi-source)",
     status: "done",
@@ -23,23 +35,18 @@ const EXPERIMENTS: Experiment[] = [
       "Same ripple field as a WebGL2 fragment shader with an IQ cosine palette.",
   },
   {
-    slug: "ascii",
-    name: "ASCII Art Suite",
-    status: "todo",
-    blurb: "Image → ASCII converter + a shaded, noise-mottled ASCII orb.",
-  },
-  {
-    slug: "wave-field",
-    name: "Generative Wave / Particle Field",
-    status: "todo",
-    blurb: "Grid of points animated with sine + simplex noise.",
-  },
-  {
     slug: "glyph-field",
     name: "Glyph Field (wave interference)",
     status: "done",
     blurb:
       "Wave-interference field on the GPU, rendered as a live grid of glyphs that react to amplitude - pluck it, wall it off, watch it ring.",
+  },
+  {
+    slug: "sonic-field",
+    name: "Sonic Field (audio-reactive)",
+    status: "done",
+    blurb:
+      "Tempo/key/mood picker drives a generative synth whose notes pluck a wave-interference field live.",
   },
   {
     slug: "box-grid",
