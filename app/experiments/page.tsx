@@ -17,8 +17,9 @@ const EXPERIMENTS: Experiment[] = [
   {
     slug: "wave-field",
     name: "Generative Wave / Particle Field",
-    status: "todo",
-    blurb: "Grid of points animated with sine + simplex noise.",
+    status: "done",
+    blurb:
+      "Summed sine wave bands with simplex-noise mottling, rendered as a monospace glyph field or a particle/dot field.",
   },
   {
     slug: "ripple-interference-multi",
