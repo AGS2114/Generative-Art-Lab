@@ -10,14 +10,26 @@ export interface SonicFieldParams {
   trail: number;
   tint: number;
   hueShift: number;
+  /** 0 = geometric, 1 = rings, 2 = crosses, 3 = organic (soft wobbled blobs). */
   glyphSet: number;
+  /** "glyphs" = current grid-of-shapes look; "soft" = blurred luminance field, calmer/atmospheric. */
   renderMode: "glyphs" | "soft";
 }
 
 export interface NoteEvent {
+  /** 0..1 pitch position, low pitch = 0 (center-ish), high pitch = 1 (outer) */
   pitch: number;
+  /** 0..1 loudness, scales pluck strength and ripple radius */
   velocity: number;
+  /** 0..1 stereo-ish angle bias, used to place the pluck around the ring */
   pan: number;
+  /**
+   * Which part of the piece produced this note - lets the display colour
+   * each pluck by its source (lead melody, chord tone, bass, or a manual
+   * user pluck) rather than every ripple sharing one global hue. Optional
+   * so existing callers that don't care about voice colouring still work;
+   * defaults to "lead" if omitted.
+   */
   voice?: "lead" | "chord" | "bass" | "manual";
 }
 
@@ -26,8 +38,18 @@ interface SonicFieldProps {
   waveSpeed: number;
   damping: number;
   stepsPerFrame: number;
+  /** Called by the parent each animation frame to pull queued note events. */
   drainNotes: () => NoteEvent[];
+  /** Continuous 0..1 audio energy (e.g. low-band RMS) applied as ambient shimmer. */
   getAmbientEnergy: () => number;
+  /**
+   * Called when the user clicks/drags on the field, with the pluck's
+   * normalized position (0..1 sim UV space) and a 0..1 strength. Layering
+   * user plucks on top of the generative ones is what turns this from
+   * "watch a generator" into "play alongside it" - the parent can choose
+   * to also sound a note for the click (see page.tsx) so the visual and
+   * audio stay in sync for user-driven plucks too.
+   */
   onManualPluck?: (x: number, y: number, strength: number) => void;
 }
 
@@ -88,7 +110,8 @@ void main() {
   h += vel * uDt;
   h = clamp(h, -1.0, 1.0);
 
-  // Hue simply rides along with the cell - it only changes when a pluck writes a new value, so it doesn't need its own dynamics here.
+  // Hue simply rides along with the cell - it only changes when a pluck
+  // writes a new value, so it doesn't need its own dynamics here.
   fragColor = vec4(h, vel, hue, 1.0);
 }
 `;
@@ -109,7 +132,8 @@ void main() {
   float d = distance(vUv, uPluckPos);
   float blob = smoothstep(uPluckRadius, 0.0, d) * uPluckStrength;
   float h = clamp(c.r + blob, -1.0, 1.0);
-  // Blend toward this pluck's hue in proportion to how much it actually disturbed this cell, so a strong nearby pluck overwrites old colour
+  // Blend toward this pluck's hue in proportion to how much it actually
+  // disturbed this cell, so a strong nearby pluck overwrites old colour
   // here while distant cells keep whatever hue they already had.
   float hue = mix(c.b, uPluckHue, clamp(blob, 0.0, 1.0));
   fragColor = vec4(h, c.g, hue, 1.0);
@@ -133,12 +157,15 @@ void main() {
   vec4 c = texture(uState, vUv);
   vec2 center = vec2(0.5);
   float d = distance(vUv, center);
-  // Oscillates around zero (not 0..1) so it can push velocity both ways - a one-directional lift here would slowly saturate the whole field
-  // toward +1 over time regardless of damping, since damping only decays velocity, not a direct height injection.
+  // Oscillates around zero (not 0..1) so it can push velocity both ways -
+  // a one-directional lift here would slowly saturate the whole field
+  // toward +1 over time regardless of damping, since damping only decays
+  // velocity, not a direct height injection.
   float ring = sin(d * 40.0 - uTime * 1.4);
   float grain = hash(vUv * 512.0 + uTime * 0.1);
   float lift = uAmbient * ring * (0.6 + grain * 0.4) * 0.015;
-  // Perturb velocity rather than height directly, so the sim's own damping term actually opposes this over time instead of it being a
+  // Perturb velocity rather than height directly, so the sim's own
+  // damping term actually opposes this over time instead of it being a
   // pure accumulator.
   float vel = c.g + lift;
   fragColor = vec4(c.r, vel, c.b, 1.0);
@@ -202,8 +229,10 @@ float sdHexagon(vec2 p, float r) {
   return length(p) * sign(p.y);
 }
 
-// Soft, wobbled blob - a circle whose radius is perturbed by a few sine harmonics of its angle, so it reads as organic/cell-like rather than a
-// perfect geometric primitive. cellId seeds a per-cell phase so neighbouring glyphs don't all wobble in lockstep.
+// Soft, wobbled blob - a circle whose radius is perturbed by a few sine
+// harmonics of its angle, so it reads as organic/cell-like rather than a
+// perfect geometric primitive. cellId seeds a per-cell phase so neighbouring
+// glyphs don't all wobble in lockstep.
 float sdBlob(vec2 p, float r, vec2 cellId) {
   float a = atan(p.y, p.x);
   float seed = hash(cellId * 3.1) * 6.2831;
@@ -265,7 +294,8 @@ void main() {
   float glow = uGlow;
   vec3 col = vec3(0.015, 0.015, 0.022);
 
-  // Background dot only fades in alongside real amplitude, and its floor opacity is much lower - a quiet/resting field should read as dark,
+  // Background dot only fades in alongside real amplitude, and its floor
+  // opacity is much lower - a quiet/resting field should read as dark,
   // not as a fully-lit grid waiting for something to happen.
   float bgPresence = smoothstep(0.0, t0, v);
   float bgDot = sdCircle(localUv, 0.035);
@@ -275,8 +305,10 @@ void main() {
   vec3 coolTint = hueRotate(vec3(0.62, 0.78, 1.0), uHueShift);
   vec3 warmTint = hueRotate(vec3(1.05, 0.75, 0.95), uHueShift);
   vec3 hueMix = mix(coolTint, warmTint, smoothstep(0.0, 0.5, v));
-  // Blend in this cell's voice-sourced hue (from whichever pluck last hit it) on top of the amplitude gradient, so colour tracks which voice -
-  // lead, chord, bass, or a manual pluck - actually rippled this spot, rather than colour being purely a function of how loud it is.
+  // Blend in this cell's voice-sourced hue (from whichever pluck last hit
+  // it) on top of the amplitude gradient, so colour tracks which voice -
+  // lead, chord, bass, or a manual pluck - actually rippled this spot,
+  // rather than colour being purely a function of how loud it is.
   vec3 voiceHue = hsv2rgb(vec3(fract(cellHue + uHueShift), 0.55, 1.0));
   vec3 hueFinal = mix(hueMix, voiceHue, 0.5);
   vec3 tintFactor = mix(vec3(1.0), hueFinal, uTint);
@@ -359,6 +391,12 @@ void main() {
   vec3 decayed = prevCol * (0.86 * uTrail);
   col = max(col, decayed);
 
+  // Soft vignette: darkens toward the edges so the field reads as a
+  // framed piece rather than a flat grid cut off by a hard border.
+  vec2 vignetteUv = fragUv - 0.5;
+  float vignette = 1.0 - dot(vignetteUv, vignetteUv) * 0.9;
+  col *= clamp(vignette, 0.55, 1.0);
+
   fragColor = vec4(col, 1.0);
 }
 `;
@@ -397,7 +435,8 @@ vec3 hueRotate(vec3 col, float shift) {
   return hsv2rgb(hsv);
 }
 
-// Soft, blurred luminance field: no grid, no glyphs - the raw wave height sampled with a small multi-tap blur and mapped straight to a smooth glow.
+// Soft, blurred luminance field: no grid, no glyphs - the raw wave height
+// sampled with a small multi-tap blur and mapped straight to a smooth glow.
 // Reads as light through water/glass rather than a lit-up display panel.
 void main() {
   vec2 fragUv = gl_FragCoord.xy / uResolution;
@@ -436,6 +475,10 @@ void main() {
   vec3 prevCol = texture(uPrevFrame, fragUv).rgb;
   vec3 decayed = prevCol * (0.9 * uTrail);
   col = max(col, decayed);
+
+  vec2 vignetteUv = fragUv - 0.5;
+  float vignette = 1.0 - dot(vignetteUv, vignetteUv) * 0.9;
+  col *= clamp(vignette, 0.55, 1.0);
 
   fragColor = vec4(col, 1.0);
 }
@@ -528,8 +571,10 @@ function createFrameTexture(
 }
 
 /**
- * SonicField - the same wave-interference / glyph-rendering engine as GlyphField, but with pointer-plucking and obstacle walls stripped out. Plucks are driven entirely by `drainNotes()`, called once per animation frame by the parent, which
- * hands back any note events queued since the previous frame from the Web Audio scheduler. `getAmbientEnergy()` supplies a continuous 0..1 value (e.g. smoothed RMS of the audio bus) that adds a faint traveling shimmer independent of discrete notes.
+ * SonicField - the same wave-interference / glyph-rendering engine as GlyphField, but with pointer-plucking and obstacle
+ * walls stripped out. Plucks are driven entirely by `drainNotes()`, called once per animation frame by the parent, which
+ * hands back any note events queued since the previous frame from the Web Audio scheduler. `getAmbientEnergy()` supplies
+ * a continuous 0..1 value (e.g. smoothed RMS of the audio bus) that adds a faint traveling shimmer independent of discrete notes.
  */
 export default function SonicField({
   params: paramOverrides,
@@ -842,14 +887,16 @@ export default function SonicField({
     let last = performance.now();
     let elapsed = 0;
 
-    // Base hue (0..1, hue-wheel fraction) per voice, before the global uHueShift rotation the display shader applies on top. Distinct lanes
-    // per voice are what let colour visibly track *which part of the music* rippled a given region, instead of colour being one global
+    // Base hue (0..1, hue-wheel fraction) per voice, before the global
+    // uHueShift rotation the display shader applies on top. Distinct lanes
+    // per voice are what let colour visibly track *which part of the
+    // music* rippled a given region, instead of colour being one global
     // constant unrelated to what's actually playing.
     const VOICE_HUE: Record<string, number> = {
-      lead: 0.58,
-      chord: 0.78,
-      bass: 0.02,
-      manual: 0.33,
+      lead: 0.58, // cool blue
+      chord: 0.78, // violet
+      bass: 0.02, // warm red
+      manual: 0.33, // green, so user plucks read as visually distinct too
     };
 
     function frame(now: number) {
@@ -860,7 +907,8 @@ export default function SonicField({
 
       const notes = drainNotesRef.current();
       for (const n of notes) {
-        // Map pitch to radius from center (low notes stay inward, high notes ring further out) and pan to angle around the field.
+        // Map pitch to radius from center (low notes stay inward, high notes
+        // ring further out) and pan to angle around the field.
         const angle = n.pan * Math.PI * 2;
         const radius = 0.08 + n.pitch * 0.34;
         const x = 0.5 + Math.cos(angle) * radius;
@@ -871,8 +919,10 @@ export default function SonicField({
         pluck(x, y, strength, pluckRadius, hue);
       }
 
-      // Manual (pointer) plucks - layered on top of the generative ones so playing along with the piece and the piece's own notes ripple the
-      // same field through the same pluck() call - one visual language, two sources. Only fires once per pointer-move event rather than
+      // Manual (pointer) plucks: layered on top of the generative ones so
+      // playing along with the piece and the piece's own notes ripple the
+      // same field through the same pluck() call - one visual language,
+      // two sources. Only fires once per pointer-move event rather than
       // every frame while held, so a drag doesn't flood the field.
       if (pointerRef.current.pending) {
         pointerRef.current.pending = false;

@@ -49,6 +49,9 @@ const GLYPH_SET_VALUES: Record<
   organic: 3,
 };
 
+// Named colour combinations (hue shift, tint strength, glyph glow) picked
+// as a set rather than by dragging three separate sliders - a faster way
+// to land on a deliberate look.
 const PALETTE_PRESETS: {
   name: string;
   hueShift: number;
@@ -152,7 +155,8 @@ export default function SonicFieldPage() {
   }
 
   function shuffleMelodySeed() {
-    // Rolls a fresh chord progression, rhythm cell, and melody walk for the current key/scale/mood - a real "new phrase", not a mood change.
+    // Rolls a fresh chord progression, rhythm cell, and melody walk for
+    // the current key/scale/mood - a real "new phrase", not a mood change.
     engineRef.current?.newPhrase();
   }
 
@@ -168,11 +172,16 @@ export default function SonicFieldPage() {
       await navigator.clipboard.writeText(String(currentSeed));
       setSeedCopied(true);
       window.setTimeout(() => setSeedCopied(false), 1200);
-    } catch {}
+    } catch {
+      // Clipboard access can fail (permissions, insecure context) - the
+      // seed is still visible in the input for manual copying.
+    }
   }
 
-  // Poll the engine's current phrase seed while playing so it can be shown and copied - the seed is only known once the scheduler actually
-  // generates a phrase, which happens inside the audio callback rather than through a React-visible event.
+  // Poll the engine's current phrase seed while playing so it can be shown
+  // and copied - the seed is only known once the scheduler actually
+  // generates a phrase, which happens inside the audio callback rather
+  // than through a React-visible event.
   useEffect(() => {
     if (!isPlaying) return;
     const id = window.setInterval(() => {
@@ -183,8 +192,10 @@ export default function SonicFieldPage() {
   }, [isPlaying]);
 
   function handleManualPluck(x: number, y: number, strength: number) {
-    // Sound a soft tone for the click too, so a user pluck and a generative pluck feel like the same kind of event rather than one
-    // being silent. Pitch follows vertical position (higher on screen = higher note) so clicking has an audible, legible mapping.
+    // Sound a soft tone for the click too, so a user pluck and a
+    // generative pluck feel like the same kind of event rather than one
+    // being silent. Pitch follows vertical position (higher on screen =
+    // higher note) so clicking has an audible, legible mapping.
     engineRef.current?.injectPluck(y, strength, x);
   }
 
@@ -243,9 +254,12 @@ export default function SonicFieldPage() {
           type: "select",
           key: "rootNote",
           label: "key",
-          value: String(rootNote),
-          options: ROOT_NOTES.map((r) => String(r.value)),
-          onChange: (v) => setRootNote(Number(v)),
+          value: ROOT_NOTES.find((r) => r.value === rootNote)?.label ?? "C",
+          options: ROOT_NOTES.map((r) => r.label),
+          onChange: (label) => {
+            const match = ROOT_NOTES.find((r) => r.label === label);
+            if (match) setRootNote(match.value);
+          },
         },
         {
           type: "select",
@@ -428,7 +442,8 @@ export default function SonicFieldPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#050505",
+        background:
+          "radial-gradient(ellipse at 50% 40%, #0d0d10 0%, #050506 55%, #020203 100%)",
       }}
     >
       <div
@@ -439,8 +454,9 @@ export default function SonicFieldPage() {
           maxHeight: "80vh",
           position: "relative",
           overflow: "hidden",
-          borderRadius: 4,
-          boxShadow: "0 0 0 1px rgba(255,255,255,0.08)",
+          borderRadius: 6,
+          boxShadow:
+            "0 0 0 1px rgba(255,255,255,0.09), 0 0 80px 10px rgba(140,120,200,0.06), 0 30px 60px -20px rgba(0,0,0,0.7), inset 0 0 60px 0 rgba(0,0,0,0.5)",
         }}
       >
         <SonicField
@@ -492,11 +508,11 @@ export default function SonicFieldPage() {
         <div
           style={{
             position: "absolute",
-            top: 16,
-            right: 316,
+            top: 52,
+            left: 16,
             display: "flex",
             flexDirection: "column",
-            alignItems: "flex-end",
+            alignItems: "flex-start",
             gap: 6,
             fontFamily: "monospace",
             fontSize: 10,
@@ -568,11 +584,12 @@ export default function SonicFieldPage() {
             position: "absolute",
             bottom: 16,
             left: 16,
-            color: "rgba(255,255,255,0.35)",
+            color: "rgba(255,255,255,0.4)",
             fontFamily: "monospace",
             fontSize: 10,
-            letterSpacing: "0.06em",
-            maxWidth: 360,
+            letterSpacing: "0.05em",
+            lineHeight: 1.6,
+            maxWidth: 340,
           }}
         >
           an original generative piece, synthesized live from the tempo / key /
@@ -589,11 +606,12 @@ export default function SonicFieldPage() {
             position: "absolute",
             top: 16,
             left: 16,
-            color: "rgba(255,255,255,0.35)",
+            color: "rgba(255,255,255,0.4)",
             fontFamily: "monospace",
             fontSize: 11,
-            letterSpacing: "0.08em",
+            letterSpacing: "0.1em",
             textDecoration: "none",
+            transition: "color 0.15s ease",
           }}
         >
           ← EXPERIMENTS
