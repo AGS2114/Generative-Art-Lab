@@ -16,21 +16,21 @@ const EXPERIMENTS: Experiment[] = [
   },
   {
     slug: "wave-field",
-    name: "Generative Wave / Particle Field",
+    name: "Generative Wave",
     status: "done",
     blurb:
-      "Summed sine wave bands with simplex-noise mottling, rendered as a monospace glyph field or a particle/dot field.",
+      "Finite-depth wave physics on a canvas: dispersion, shoaling, refraction and group velocity, rendered as ASCII glyphs or dots.",
   },
   {
     slug: "ripple-interference-multi",
-    name: "Ripple / Interference (multi-source)",
+    name: "Ripples (multi-source)",
     status: "done",
     blurb:
       "Multiple ripple sources summed into caustic cusps, lattices, and grain.",
   },
   {
     slug: "ripple-interference-shader",
-    name: "Ripple / Interference (shader)",
+    name: "Ripples (shader)",
     status: "done",
     blurb:
       "Same ripple field as a WebGL2 fragment shader with an IQ cosine palette.",
@@ -64,7 +64,7 @@ const EXPERIMENTS: Experiment[] = [
   {
     slug: "mycelium",
     name: "Mycelium / Space Colonisation",
-    status: "todo",
+    status: "done",
     blurb: "Branching growth toward scattered attraction points.",
   },
   {
