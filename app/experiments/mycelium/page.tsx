@@ -7,42 +7,105 @@ import ControlPanel, { Control } from "../_lib/ControlPanel";
 import { BACKDROP, backLink, pill } from "../_lib/chrome";
 
 const PALETTE_PRESETS: { name: string; rgb: [number, number, number] }[] = [
+  { name: "ash", rgb: [208, 205, 209] },
   { name: "bone", rgb: [232, 230, 226] },
-  { name: "ice", rgb: [214, 232, 255] },
+  { name: "ice", rgb: [206, 224, 250] },
   { name: "sunset", rgb: [255, 173, 122] },
   { name: "moss", rgb: [190, 235, 160] },
 ];
 
+const DEFAULTS: {
+  [K in
+    | "attractorSpacing"
+    | "maxInfluenceDist"
+    | "killDist"
+    | "stepLength"
+    | "tipSpacing"
+    | "rootTips"
+    | "inertia"
+    | "wander"
+    | "branchChance"
+    | "growthSpeed"
+    | "maxNodes"
+    | "maxPerTick"
+    | "headRadius"
+    | "strands"
+    | "strandSpread"
+    | "dotSize"
+    | "threadAlpha"
+    | "trunkThickness"
+    | "stalledHeads"
+    | "grain"
+    | "stopAt"]: number;
+} & { seedMode: MyceliumParams["seedMode"]; palette: string; loop: boolean } = {
+  attractorSpacing: 13,
+  maxInfluenceDist: 55,
+  killDist: 9,
+  stepLength: 2.5,
+  tipSpacing: 10.5,
+  seedMode: "diagonal",
+  rootTips: 9,
+  inertia: 0.7,
+  wander: 0.12,
+  branchChance: 0.3,
+  growthSpeed: 0.5,
+  maxNodes: 60000,
+  maxPerTick: 400,
+  headRadius: 6.2,
+  strands: 7,
+  strandSpread: 6,
+  dotSize: 1.3,
+  threadAlpha: 0.7,
+  trunkThickness: 0.6,
+  stalledHeads: 0.08,
+  grain: 0.05,
+  palette: "ash",
+  loop: false,
+  stopAt: 1,
+};
+
+const STAGE_ASPECT = "720 / 926";
+
 export default function MyceliumPage() {
-  // growth
-  const [attractionCount, setAttractionCount] = useState(2000);
-  const [maxInfluenceDist, setMaxInfluenceDist] = useState(150);
-  const [killDist, setKillDist] = useState(12);
-  const [stepLength, setStepLength] = useState(2.5);
-  const [seedMode, setSeedMode] =
-    useState<MyceliumParams["seedMode"]>("corners");
-  const [inertia, setInertia] = useState(0.82);
-  const [wander, setWander] = useState(0.14);
-  const [growthSpeed, setGrowthSpeed] = useState(1);
-  const [maxNodes, setMaxNodes] = useState(30000);
-  const [maxPerTick, setMaxPerTick] = useState(200);
+  const [attractorSpacing, setAttractorSpacing] = useState(
+    DEFAULTS.attractorSpacing,
+  );
+  const [maxInfluenceDist, setMaxInfluenceDist] = useState(
+    DEFAULTS.maxInfluenceDist,
+  );
+  const [killDist, setKillDist] = useState(DEFAULTS.killDist);
+  const [stepLength, setStepLength] = useState(DEFAULTS.stepLength);
+  const [tipSpacing, setTipSpacing] = useState(DEFAULTS.tipSpacing);
+  const [seedMode, setSeedMode] = useState<MyceliumParams["seedMode"]>(
+    DEFAULTS.seedMode,
+  );
+  const [rootTips, setRootTips] = useState(DEFAULTS.rootTips);
+  const [inertia, setInertia] = useState(DEFAULTS.inertia);
+  const [wander, setWander] = useState(DEFAULTS.wander);
+  const [branchChance, setBranchChance] = useState(DEFAULTS.branchChance);
+  const [growthSpeed, setGrowthSpeed] = useState(DEFAULTS.growthSpeed);
+  const [maxNodes, setMaxNodes] = useState(DEFAULTS.maxNodes);
+  const [maxPerTick, setMaxPerTick] = useState(DEFAULTS.maxPerTick);
 
-  // look
-  const [tipDots, setTipDots] = useState(7);
-  const [tipRadius, setTipRadius] = useState(7);
-  const [dotSize, setDotSize] = useState(1.2);
-  const [threadAlpha, setThreadAlpha] = useState(0.22);
-  const [threadSpread, setThreadSpread] = useState(7);
-  const [trunkThickness, setTrunkThickness] = useState(0.8);
-  const [jitter, setJitter] = useState(1.2);
-  const [paletteName, setPaletteName] = useState("bone");
+  const [headRadius, setHeadRadius] = useState(DEFAULTS.headRadius);
+  const [strands, setStrands] = useState(DEFAULTS.strands);
+  const [strandSpread, setStrandSpread] = useState(DEFAULTS.strandSpread);
+  const [dotSize, setDotSize] = useState(DEFAULTS.dotSize);
+  const [threadAlpha, setThreadAlpha] = useState(DEFAULTS.threadAlpha);
+  const [trunkThickness, setTrunkThickness] = useState(DEFAULTS.trunkThickness);
+  const [stalledHeads, setStalledHeads] = useState(DEFAULTS.stalledHeads);
+  const [grain, setGrain] = useState(DEFAULTS.grain);
+  const [paletteName, setPaletteName] = useState(DEFAULTS.palette);
 
+  const [loop, setLoop] = useState(DEFAULTS.loop);
+  const [stopAt, setStopAt] = useState(DEFAULTS.stopAt);
+  const [stopped, setStopped] = useState(false);
   const [paused, setPaused] = useState(false);
   const [resetToken, setResetToken] = useState(0);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [uiHidden, setUiHidden] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onFs = () => setIsFullscreen(document.fullscreenElement != null);
@@ -50,15 +113,46 @@ export default function MyceliumPage() {
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
+  function resetDefaults() {
+    setAttractorSpacing(DEFAULTS.attractorSpacing);
+    setMaxInfluenceDist(DEFAULTS.maxInfluenceDist);
+    setKillDist(DEFAULTS.killDist);
+    setStepLength(DEFAULTS.stepLength);
+    setTipSpacing(DEFAULTS.tipSpacing);
+    setSeedMode(DEFAULTS.seedMode);
+    setRootTips(DEFAULTS.rootTips);
+    setInertia(DEFAULTS.inertia);
+    setWander(DEFAULTS.wander);
+    setBranchChance(DEFAULTS.branchChance);
+    setGrowthSpeed(DEFAULTS.growthSpeed);
+    setMaxNodes(DEFAULTS.maxNodes);
+    setMaxPerTick(DEFAULTS.maxPerTick);
+    setHeadRadius(DEFAULTS.headRadius);
+    setStrands(DEFAULTS.strands);
+    setStrandSpread(DEFAULTS.strandSpread);
+    setDotSize(DEFAULTS.dotSize);
+    setThreadAlpha(DEFAULTS.threadAlpha);
+    setTrunkThickness(DEFAULTS.trunkThickness);
+    setStalledHeads(DEFAULTS.stalledHeads);
+    setGrain(DEFAULTS.grain);
+    setPaletteName(DEFAULTS.palette);
+    setLoop(DEFAULTS.loop);
+    setStopAt(DEFAULTS.stopAt);
+    setStopped(false);
+    setPaused(false);
+    setResetToken((t) => t + 1);
+  }
+
   async function toggleFullscreen() {
     if (document.fullscreenElement) await document.exitFullscreen();
-    else await containerRef.current?.requestFullscreen();
+    else await stageRef.current?.requestFullscreen();
   }
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "f" || e.key === "F") toggleFullscreen();
       else if (e.key === "h" || e.key === "H") setUiHidden((v) => !v);
+      else if (e.key === "s" || e.key === "S") setStopped((v) => !v);
       else if (e.key === " ") {
         e.preventDefault();
         setPaused((v) => !v);
@@ -73,26 +167,54 @@ export default function MyceliumPage() {
     PALETTE_PRESETS[0].rgb;
 
   const params: MyceliumParams = {
-    attractionCount,
+    attractorSpacing,
     maxInfluenceDist,
     killDist,
     stepLength,
+    tipSpacing,
     seedMode,
+    rootTips,
     inertia,
     wander,
-    growthSpeed,
+    branchChance,
+    idleLimit: 6,
     maxNodes,
     maxPerTick,
-    tipDots,
-    tipRadius,
+    growthSpeed,
+    headRadius,
+    strands,
+    strandSpread,
     dotSize,
     threadAlpha,
-    threadSpread,
     trunkThickness,
-    jitter,
+    stalledHeads,
+    grain,
     color: activeColor,
     paused,
+    loop,
+    holdSeconds: 6,
+    stopAt,
+    stopped,
   };
+
+  const slider = (
+    key: string,
+    label: string,
+    min: number,
+    max: number,
+    step: number,
+    value: number,
+    onChange: (v: number) => void,
+  ): Control => ({
+    type: "slider",
+    key,
+    label,
+    min,
+    max,
+    step,
+    value,
+    onChange,
+  });
 
   const controls: Control[] = [
     {
@@ -103,7 +225,18 @@ export default function MyceliumPage() {
           label: paused ? "play" : "pause",
           onClick: () => setPaused((v) => !v),
         },
-        { label: "regrow", onClick: () => setResetToken((t) => t + 1) },
+        {
+          label: stopped ? "resume" : "stop here",
+          onClick: () => setStopped((v) => !v),
+        },
+        { label: "reset defaults", onClick: resetDefaults },
+        {
+          label: "regrow",
+          onClick: () => {
+            setStopped(false);
+            setResetToken((t) => t + 1);
+          },
+        },
       ],
     },
     {
@@ -117,99 +250,102 @@ export default function MyceliumPage() {
           key: "seedMode",
           label: "seed layout",
           value: seedMode,
-          options: ["corners", "center", "bottom"],
+          options: ["diagonal", "corners", "center", "bottom"],
           onChange: (v) => setSeedMode(v as MyceliumParams["seedMode"]),
         },
         {
-          type: "slider",
-          key: "maxNodes",
-          label: "node budget",
-          min: 5000,
-          max: 80000,
-          step: 5000,
-          value: maxNodes,
-          onChange: setMaxNodes,
+          type: "select",
+          key: "loop",
+          label: "when finished",
+          value: loop ? "regrow" : "hold",
+          options: ["regrow", "hold"],
+          onChange: (v) => setLoop(v === "regrow"),
         },
-        {
-          type: "slider",
-          key: "maxPerTick",
-          label: "max new / step",
-          min: 20,
-          max: 600,
-          step: 20,
-          value: maxPerTick,
-          onChange: setMaxPerTick,
-        },
-        {
-          type: "slider",
-          key: "growthSpeed",
-          label: "growth speed",
-          min: 1,
-          max: 8,
-          step: 1,
-          value: growthSpeed,
-          onChange: setGrowthSpeed,
-        },
-        {
-          type: "slider",
-          key: "attractionCount",
-          label: "attraction points",
-          min: 400,
-          max: 4000,
-          step: 100,
-          value: attractionCount,
-          onChange: setAttractionCount,
-        },
-        {
-          type: "slider",
-          key: "maxInfluenceDist",
-          label: "influence dist",
-          min: 30,
-          max: 160,
-          step: 5,
-          value: maxInfluenceDist,
-          onChange: setMaxInfluenceDist,
-        },
-        {
-          type: "slider",
-          key: "killDist",
-          label: "kill dist",
-          min: 2,
-          max: 30,
-          step: 1,
-          value: killDist,
-          onChange: setKillDist,
-        },
-        {
-          type: "slider",
-          key: "stepLength",
-          label: "step length",
-          min: 1,
-          max: 8,
-          step: 0.5,
-          value: stepLength,
-          onChange: setStepLength,
-        },
-        {
-          type: "slider",
-          key: "inertia",
-          label: "heading inertia",
-          min: 0,
-          max: 0.9,
-          step: 0.02,
-          value: inertia,
-          onChange: setInertia,
-        },
-        {
-          type: "slider",
-          key: "wander",
-          label: "wander",
-          min: 0,
-          max: 0.6,
-          step: 0.02,
-          value: wander,
-          onChange: setWander,
-        },
+        slider(
+          "stopAt",
+          "stop point (1 = run on)",
+          0.1,
+          1,
+          0.05,
+          stopAt,
+          setStopAt,
+        ),
+        slider(
+          "growthSpeed",
+          "growth speed",
+          0.1,
+          3,
+          0.1,
+          growthSpeed,
+          setGrowthSpeed,
+        ),
+        slider("rootTips", "tips per seed", 3, 16, 1, rootTips, setRootTips),
+        slider(
+          "branchChance",
+          "branching",
+          0,
+          0.6,
+          0.02,
+          branchChance,
+          setBranchChance,
+        ),
+        slider(
+          "tipSpacing",
+          "tip spacing",
+          6,
+          20,
+          0.5,
+          tipSpacing,
+          setTipSpacing,
+        ),
+        slider(
+          "attractorSpacing",
+          "food spacing",
+          8,
+          24,
+          1,
+          attractorSpacing,
+          setAttractorSpacing,
+        ),
+        slider(
+          "maxInfluenceDist",
+          "influence dist",
+          25,
+          120,
+          5,
+          maxInfluenceDist,
+          setMaxInfluenceDist,
+        ),
+        slider("killDist", "kill dist", 3, 20, 1, killDist, setKillDist),
+        slider(
+          "stepLength",
+          "step length",
+          1,
+          6,
+          0.5,
+          stepLength,
+          setStepLength,
+        ),
+        slider("inertia", "heading inertia", 0, 0.9, 0.02, inertia, setInertia),
+        slider("wander", "wander", 0, 0.6, 0.02, wander, setWander),
+        slider(
+          "maxNodes",
+          "node budget",
+          10000,
+          80000,
+          5000,
+          maxNodes,
+          setMaxNodes,
+        ),
+        slider(
+          "maxPerTick",
+          "max new / step",
+          50,
+          600,
+          50,
+          maxPerTick,
+          setMaxPerTick,
+        ),
       ],
     },
     {
@@ -218,76 +354,54 @@ export default function MyceliumPage() {
       label: "Look",
       defaultOpen: false,
       controls: [
-        {
-          type: "slider",
-          key: "tipDots",
-          label: "tip dots",
-          min: 1,
-          max: 14,
-          step: 1,
-          value: tipDots,
-          onChange: setTipDots,
-        },
-        {
-          type: "slider",
-          key: "tipRadius",
-          label: "tip radius",
-          min: 1,
-          max: 14,
-          step: 0.5,
-          value: tipRadius,
-          onChange: setTipRadius,
-        },
-        {
-          type: "slider",
-          key: "dotSize",
-          label: "dot size",
-          min: 0.6,
-          max: 4,
-          step: 0.1,
-          value: dotSize,
-          onChange: setDotSize,
-        },
-        {
-          type: "slider",
-          key: "threadAlpha",
-          label: "wake threads",
-          min: 0,
-          max: 0.9,
-          step: 0.02,
-          value: threadAlpha,
-          onChange: setThreadAlpha,
-        },
-        {
-          type: "slider",
-          key: "threadSpread",
-          label: "thread spread",
-          min: 0,
-          max: 20,
-          step: 0.5,
-          value: threadSpread,
-          onChange: setThreadSpread,
-        },
-        {
-          type: "slider",
-          key: "trunkThickness",
-          label: "trunk thickening",
-          min: 0,
-          max: 1,
-          step: 0.02,
-          value: trunkThickness,
-          onChange: setTrunkThickness,
-        },
-        {
-          type: "slider",
-          key: "jitter",
-          label: "dot jitter",
-          min: 0,
-          max: 4,
-          step: 0.1,
-          value: jitter,
-          onChange: setJitter,
-        },
+        slider(
+          "headRadius",
+          "head size",
+          3,
+          10,
+          0.2,
+          headRadius,
+          setHeadRadius,
+        ),
+        slider("strands", "fibres per tip", 1, 10, 1, strands, setStrands),
+        slider(
+          "strandSpread",
+          "fibre spread",
+          0,
+          14,
+          0.5,
+          strandSpread,
+          setStrandSpread,
+        ),
+        slider("dotSize", "fibre dot size", 0.6, 3, 0.1, dotSize, setDotSize),
+        slider(
+          "threadAlpha",
+          "fibre brightness",
+          0.1,
+          1,
+          0.05,
+          threadAlpha,
+          setThreadAlpha,
+        ),
+        slider(
+          "trunkThickness",
+          "trunk thickness",
+          0,
+          1.5,
+          0.05,
+          trunkThickness,
+          setTrunkThickness,
+        ),
+        slider(
+          "stalledHeads",
+          "lone heads",
+          0,
+          0.5,
+          0.01,
+          stalledHeads,
+          setStalledHeads,
+        ),
+        slider("grain", "grain", 0, 0.2, 0.01, grain, setGrain),
         {
           type: "select",
           key: "palette",
@@ -300,28 +414,67 @@ export default function MyceliumPage() {
     },
   ];
 
-  return (
-    <main
-      ref={containerRef}
-      style={{
-        width: "100vw",
+  const stageStyle: React.CSSProperties = isFullscreen
+    ? {
+        width: "min(100%, 1100px, calc((100vh - 150px) * 16 / 10))",
         height: "100vh",
         position: "relative",
+        background: "#171318",
+      }
+    : {
+        position: "relative",
+        width: "min(100%, 560px, calc((100vh - 150px) * 720 / 926))",
+        aspectRatio: STAGE_ASPECT,
+        borderRadius: 14,
+        overflow: "hidden",
+        background: "#171318",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
+      };
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        position: "relative",
+        boxSizing: "border-box",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
+        padding: "72px 16px 56px",
         background: BACKDROP,
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <Mycelium params={params} resetToken={resetToken} />
+      <div ref={stageRef} style={stageStyle}>
+        <div style={{ position: "absolute", inset: 0 }}>
+          <Mycelium params={params} resetToken={resetToken} />
+        </div>
+
+        <div
+          style={{
+            position: "absolute",
+            bottom: 12,
+            right: 12,
+            display: "flex",
+            gap: 8,
+          }}
+        >
+          <button
+            onClick={() => setUiHidden((v) => !v)}
+            style={pill}
+            title="Toggle UI (H)"
+          >
+            {uiHidden ? "SHOW UI" : "HIDE UI"}
+          </button>
+          <button
+            onClick={toggleFullscreen}
+            style={pill}
+            title="Toggle fullscreen (F)"
+          >
+            {isFullscreen ? "EXIT FULLSCREEN" : "FULLSCREEN"}
+          </button>
+        </div>
       </div>
 
       {!uiHidden && <ControlPanel title="Mycelium" controls={controls} />}
@@ -331,31 +484,6 @@ export default function MyceliumPage() {
           ← EXPERIMENTS
         </Link>
       )}
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: 16,
-          right: 16,
-          display: "flex",
-          gap: 8,
-        }}
-      >
-        <button
-          onClick={() => setUiHidden((v) => !v)}
-          style={pill}
-          title="Toggle UI (H)"
-        >
-          {uiHidden ? "SHOW UI" : "HIDE UI"}
-        </button>
-        <button
-          onClick={toggleFullscreen}
-          style={pill}
-          title="Toggle fullscreen (F)"
-        >
-          {isFullscreen ? "EXIT FULLSCREEN" : "FULLSCREEN"}
-        </button>
-      </div>
     </main>
   );
 }
