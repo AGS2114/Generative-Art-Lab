@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import WaveField, { RenderMode, RampMode, WaveFieldParams } from "./WaveField";
 import ControlPanel, { Control } from "../_lib/ControlPanel";
+import { BACKDROP, backLink, pill } from "../_lib/chrome";
 
 const PALETTE_PRESETS: { name: string; rgb: [number, number, number] }[] = [
   { name: "ice", rgb: [214, 232, 255] },
@@ -292,7 +293,7 @@ export default function WaveFieldPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#000000",
+        background: BACKDROP,
       }}
     >
       <div
@@ -309,20 +310,7 @@ export default function WaveFieldPage() {
       {!uiHidden && <ControlPanel title="Wave Field" controls={controls} />}
 
       {!uiHidden && (
-        <Link
-          href="/experiments"
-          style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            color: "rgba(255,255,255,0.4)",
-            fontFamily: "monospace",
-            fontSize: 11,
-            letterSpacing: "0.1em",
-            textDecoration: "none",
-            transition: "color 0.15s ease",
-          }}
-        >
+        <Link href="/experiments" style={backLink}>
           ← EXPERIMENTS
         </Link>
       )}
@@ -338,34 +326,14 @@ export default function WaveFieldPage() {
       >
         <button
           onClick={() => setUiHidden((v) => !v)}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(255,255,255,0.25)",
-            color: "#d0d0d0",
-            fontFamily: "monospace",
-            fontSize: 10,
-            letterSpacing: "0.06em",
-            padding: "6px 10px",
-            borderRadius: 2,
-            cursor: "pointer",
-          }}
+          style={pill}
           title="Toggle UI (H)"
         >
           {uiHidden ? "SHOW UI" : "HIDE UI"}
         </button>
         <button
           onClick={toggleFullscreen}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(255,255,255,0.25)",
-            color: "#d0d0d0",
-            fontFamily: "monospace",
-            fontSize: 10,
-            letterSpacing: "0.06em",
-            padding: "6px 10px",
-            borderRadius: 2,
-            cursor: "pointer",
-          }}
+          style={pill}
           title="Toggle fullscreen (F)"
         >
           {isFullscreen ? "EXIT FULLSCREEN" : "FULLSCREEN"}

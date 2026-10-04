@@ -1,17 +1,20 @@
 import Link from "next/link";
 import RippleInterferenceShader from "./experiments/ripple-interference-shader/RippleInterferenceShader";
+import {
+  PALETTES,
+  DEFAULT_PALETTE,
+  DEFAULT_SOURCES,
+  DEFAULTS,
+} from "./experiments/ripple-interference-shader/defaults";
+import { TempleMark } from "./experiments/_lib/mac/icons";
 
 export default function Home() {
   return (
     <main style={{ width: "100vw", height: "100vh", position: "relative" }}>
       <RippleInterferenceShader
-        sources={[
-          { x: 0.62, y: 0.4, frequency: 0.05, speed: 0.4, amplitude: 1 },
-        ]}
-        rippleStrength={0.16}
-        driftSpeed={0.12}
-        causticStrength={0.5}
-        grainAmount={0.06}
+        palette={PALETTES[DEFAULT_PALETTE]}
+        sources={DEFAULT_SOURCES}
+        {...DEFAULTS}
       />
       <div
         style={{
@@ -22,23 +25,28 @@ export default function Home() {
           justifyContent: "center",
         }}
       >
-        <Link
-          href="/experiments"
-          style={{
-            fontFamily: "monospace",
-            fontSize: 13,
-            letterSpacing: "0.12em",
-            color: "#f2f2f2",
-            background: "rgba(0,0,0,0.35)",
-            border: "1px solid rgba(255,255,255,0.25)",
-            borderRadius: 4,
-            padding: "10px 20px",
-            textDecoration: "none",
-            backdropFilter: "blur(2px)",
-          }}
-        >
-          VIEW EXPERIMENTS →
-        </Link>
+        <div className="mac-alert">
+          <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+            <TempleMark size={48} />
+            <div style={{ lineHeight: 1.5 }}>
+              <div style={{ fontSize: 17 }}>Welcome to Generative Art Lab</div>
+              <div style={{ marginTop: 6 }}>
+                Wave physics, ripples, glyphs and sound. Pixels and math.
+              </div>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: 14,
+            }}
+          >
+            <Link href="/experiments" className="mac-btn default">
+              Open Experiments
+            </Link>
+          </div>
+        </div>
       </div>
     </main>
   );

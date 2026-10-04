@@ -5,6 +5,7 @@ import Link from "next/link";
 import SonicField, { NoteEvent } from "./SonicField";
 import { SynthEngine, ScaleName, MoodName } from "./synthEngine";
 import ControlPanel, { Control } from "../_lib/ControlPanel";
+import { BACKDROP, backLink, pill } from "../_lib/chrome";
 
 const SCALES: { value: ScaleName; label: string }[] = [
   { value: "major", label: "major" },
@@ -49,9 +50,6 @@ const GLYPH_SET_VALUES: Record<
   organic: 3,
 };
 
-// Named colour combinations (hue shift, tint strength, glyph glow) picked
-// as a set rather than by dragging three separate sliders - a faster way
-// to land on a deliberate look.
 const PALETTE_PRESETS: {
   name: string;
   hueShift: number;
@@ -155,8 +153,7 @@ export default function SonicFieldPage() {
   }
 
   function shuffleMelodySeed() {
-    // Rolls a fresh chord progression, rhythm cell, and melody walk for
-    // the current key/scale/mood - a real "new phrase", not a mood change.
+    // Rolls a fresh chord progression, rhythm cell, and melody walk for the current key/scale/mood - a real "new phrase", not a mood change.
     engineRef.current?.newPhrase();
   }
 
@@ -172,16 +169,11 @@ export default function SonicFieldPage() {
       await navigator.clipboard.writeText(String(currentSeed));
       setSeedCopied(true);
       window.setTimeout(() => setSeedCopied(false), 1200);
-    } catch {
-      // Clipboard access can fail (permissions, insecure context) - the
-      // seed is still visible in the input for manual copying.
-    }
+    } catch {}
   }
 
-  // Poll the engine's current phrase seed while playing so it can be shown
-  // and copied - the seed is only known once the scheduler actually
-  // generates a phrase, which happens inside the audio callback rather
-  // than through a React-visible event.
+  // Poll the engine's current phrase seed while playing so it can be shown and copied - the seed is only known once the scheduler actually
+  // generates a phrase, which happens inside the audio callback rather than through a React-visible event.
   useEffect(() => {
     if (!isPlaying) return;
     const id = window.setInterval(() => {
@@ -442,8 +434,7 @@ export default function SonicFieldPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background:
-          "radial-gradient(ellipse at 50% 40%, #0d0d10 0%, #050506 55%, #020203 100%)",
+        background: `radial-gradient(ellipse at 50% 40%, color-mix(in srgb, ${BACKDROP}, white 5%) 0%, ${BACKDROP} 70%)`,
       }}
     >
       <div
@@ -456,7 +447,7 @@ export default function SonicFieldPage() {
           overflow: "hidden",
           borderRadius: 6,
           boxShadow:
-            "0 0 0 1px rgba(255,255,255,0.09), 0 0 80px 10px rgba(140,120,200,0.06), 0 30px 60px -20px rgba(0,0,0,0.7), inset 0 0 60px 0 rgba(0,0,0,0.5)",
+            "0 0 0 1px rgba(255,255,255,0.09), 0 0 80px 10px color-mix(in srgb, var(--wp-a, #1d5f94) 14%, transparent), 0 30px 60px -20px rgba(0,0,0,0.7), inset 0 0 60px 0 rgba(0,0,0,0.5)",
         }}
       >
         <SonicField
@@ -600,20 +591,7 @@ export default function SonicFieldPage() {
       )}
 
       {!uiHidden && (
-        <Link
-          href="/experiments"
-          style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            color: "rgba(255,255,255,0.4)",
-            fontFamily: "monospace",
-            fontSize: 11,
-            letterSpacing: "0.1em",
-            textDecoration: "none",
-            transition: "color 0.15s ease",
-          }}
-        >
+        <Link href="/experiments" style={backLink}>
           ← EXPERIMENTS
         </Link>
       )}
@@ -629,34 +607,14 @@ export default function SonicFieldPage() {
       >
         <button
           onClick={() => setUiHidden((v) => !v)}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(0,0,0,0.25)",
-            color: "black",
-            fontFamily: "monospace",
-            fontSize: 10,
-            letterSpacing: "0.06em",
-            padding: "6px 10px",
-            borderRadius: 2,
-            cursor: "pointer",
-          }}
+          style={pill}
           title="Toggle UI (H)"
         >
           {uiHidden ? "SHOW UI" : "HIDE UI"}
         </button>
         <button
           onClick={toggleFullscreen}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(0,0,0,0.25)",
-            color: "black",
-            fontFamily: "monospace",
-            fontSize: 10,
-            letterSpacing: "0.06em",
-            padding: "6px 10px",
-            borderRadius: 2,
-            cursor: "pointer",
-          }}
+          style={pill}
           title="Toggle fullscreen (F)"
         >
           {isFullscreen ? "EXIT FULLSCREEN" : "FULLSCREEN"}

@@ -7,14 +7,14 @@ import { mulberry32 } from "../_lib/noise";
 import { MyceliumEngine, EngineParams } from "./engine";
 
 export interface MyceliumParams extends EngineParams {
-  growthSpeed: number;
-  tipDots: number;
-  tipRadius: number;
-  dotSize: number;
-  threadAlpha: number;
-  threadSpread: number;
-  trunkThickness: number;
-  jitter: number;
+  growthSpeed: number; // sim steps per frame
+  tipDots: number; // dots per tip cluster
+  tipRadius: number; // px
+  dotSize: number; // px
+  threadAlpha: number; // 0..1 faint wake threads
+  threadSpread: number; // px, width of the hairline bundle
+  trunkThickness: number; // 0..1 how strongly traffic thickens trunks
+  jitter: number; // px scatter for stamped dots
   color: [number, number, number];
   maxNodes: number;
   maxPerTick: number;
@@ -27,7 +27,7 @@ interface MyceliumProps {
 }
 
 const FIELD_SEED = 4242;
-const BG = "#0f0d10";
+const BG = "#0f0d10"; // matches the near-black, faintly warm ground in the reference
 
 function engineKey(p: MyceliumParams) {
   return [
@@ -54,6 +54,7 @@ export default function Mycelium({ params, resetToken }: MyceliumProps) {
   const keyRef = useRef("");
   const tokenRef = useRef(-1);
   const stampRand = useRef(mulberry32(FIELD_SEED));
+  // per-node bookkeeping: last traffic level already stamped, so trunks only re-stamp when they thicken
   const stampedTraffic = useRef<number[]>([]);
 
   useResizeObserver(canvasRef, (width, height, dpr) => {
@@ -62,7 +63,7 @@ export default function Mycelium({ params, resetToken }: MyceliumProps) {
     acc.width = width;
     acc.height = height;
     accumRef.current = acc;
-    engineRef.current = null;
+    engineRef.current = null; // rebuild for new size
   });
 
   function ensureEngine(): MyceliumEngine | null {
@@ -125,7 +126,8 @@ export default function Mycelium({ params, resetToken }: MyceliumProps) {
           const par = engine.nodes[n.parent];
           if (!par) continue;
 
-          // 1) wake threads: a small bundle of offset hairlines (parent -> node), very low alpha. This is the hazy filament haze trailing behind each tip in the reference.
+          // 1) wake threads: a small bundle of offset hairlines (parent -> node), very low alpha.
+          //    This is the hazy filament haze trailing behind each tip in the reference.
           const tx = -(n.y - par.y);
           const ty = n.x - par.x;
           const tl = Math.hypot(tx, ty) || 1;

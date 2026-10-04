@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Mycelium, { MyceliumParams } from "./Mycelium";
 import ControlPanel, { Control } from "../_lib/ControlPanel";
+import { BACKDROP, backLink, pill } from "../_lib/chrome";
 
 const PALETTE_PRESETS: { name: string; rgb: [number, number, number] }[] = [
   { name: "bone", rgb: [232, 230, 226] },
@@ -299,18 +300,6 @@ export default function MyceliumPage() {
     },
   ];
 
-  const pill: React.CSSProperties = {
-    background: "transparent",
-    border: "1px solid rgba(255,255,255,0.25)",
-    color: "#d0d0d0",
-    fontFamily: "monospace",
-    fontSize: 10,
-    letterSpacing: "0.06em",
-    padding: "6px 10px",
-    borderRadius: 2,
-    cursor: "pointer",
-  };
-
   return (
     <main
       ref={containerRef}
@@ -321,7 +310,7 @@ export default function MyceliumPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#0f0d10",
+        background: BACKDROP,
       }}
     >
       <div
@@ -338,19 +327,7 @@ export default function MyceliumPage() {
       {!uiHidden && <ControlPanel title="Mycelium" controls={controls} />}
 
       {!uiHidden && (
-        <Link
-          href="/experiments"
-          style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            color: "rgba(255,255,255,0.4)",
-            fontFamily: "monospace",
-            fontSize: 11,
-            letterSpacing: "0.1em",
-            textDecoration: "none",
-          }}
-        >
+        <Link href="/experiments" style={backLink}>
           ← EXPERIMENTS
         </Link>
       )}

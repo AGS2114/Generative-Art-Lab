@@ -3,13 +3,13 @@ import { mulberry32 } from "../_lib/noise";
 export interface MyceliumNode {
   x: number;
   y: number;
-  parent: number;
-  birth: number;
-  traffic: number;
-  idle: number;
-  dx: number;
+  parent: number; // index, -1 for roots
+  birth: number; // sim step of creation
+  traffic: number; // descendant count, drives trunk thickening
+  idle: number; // consecutive ticks with no attraction pull
+  dx: number; // heading (unit)
   dy: number;
-  active: boolean;
+  active: boolean; // still allowed to grow
 }
 
 export interface AttractionPoint {
@@ -20,17 +20,17 @@ export interface AttractionPoint {
 
 export interface EngineParams {
   attractionCount: number;
-  maxInfluenceDist: number;
-  killDist: number;
-  stepLength: number;
+  maxInfluenceDist: number; // px
+  killDist: number; // px
+  stepLength: number; // px
   seedMode: "corners" | "center" | "bottom";
-  inertia: number;
-  wander: number;
-  maxNodes: number;
-  maxPerTick: number;
+  inertia: number; // 0..1 heading persistence, kills zig-zag
+  wander: number; // 0..1 random heading jitter
+  maxNodes: number; // hard cap: growth stops here, keeps the frame budget safe
+  maxPerTick: number; // cap on new nodes per tick, keeps per-frame cost flat
 }
 
-/** Space-colonization growth - Pure simulation, no drawing. Positions are in CSS-agnostic canvas px. */
+/** Space-colonization growth. Pure simulation, no drawing. Positions are in CSS-agnostic canvas px. */
 export class MyceliumEngine {
   nodes: MyceliumNode[] = [];
   points: AttractionPoint[] = [];
@@ -84,6 +84,7 @@ export class MyceliumEngine {
 
     for (const [sx, sy] of seeds) {
       this.activeList.push(this.nodes.length);
+      // aim each root at the canvas centre so it fans inward
       const ax = w / 2 - sx;
       const ay = h / 2 - sy;
       const m = Math.hypot(ax, ay) || 1;
@@ -125,6 +126,7 @@ export class MyceliumEngine {
     }
   }
 
+  /** Advances one growth step. Returns indices of nodes created this step. */
   tick(): number[] {
     const { p } = this;
     if (this.nodes.length >= p.maxNodes) {
@@ -187,8 +189,11 @@ export class MyceliumEngine {
 
     if (this.nodes.length >= p.maxNodes) return created;
 
+    // Nodes that received pull this tick are "hot". Everything else idles, and an
+    // idle node is retired from the grid after a few ticks so lookups stay cheap.
     let entries = Array.from(cnt.entries());
     if (entries.length > p.maxPerTick) {
+      // rotate which nodes get to grow so growth stays fair, not biased to low indices
       const off = (this.step * 7919) % entries.length;
       entries = entries
         .slice(off)
@@ -233,6 +238,7 @@ export class MyceliumEngine {
       });
       created.push(idx);
 
+      // traffic walk, capped short: trunks only need a rough weight, not an exact count
       let a = ni;
       let depth = 0;
       while (a >= 0 && depth < 40) {
@@ -242,6 +248,8 @@ export class MyceliumEngine {
       }
     }
 
+    // Retire nodes that have stopped getting pull, plus interior nodes that already branched.
+    // Only touch recently-active candidates so this pass is O(active), not O(all).
     for (let i = this.activeList.length - 1; i >= 0; i--) {
       const ni = this.activeList[i];
       const n = this.nodes[ni];
@@ -254,6 +262,7 @@ export class MyceliumEngine {
     }
     for (const ni of created) this.activeList.push(ni);
 
+    // compact dead attraction points occasionally
     if (this.step % 60 === 0)
       this.points = this.points.filter((pt) => pt.alive);
 
@@ -267,6 +276,7 @@ export class MyceliumEngine {
     );
   }
 
+  /** 0..1 fill toward the node budget, for a progress readout. */
   get progress() {
     return Math.min(1, this.nodes.length / this.p.maxNodes);
   }

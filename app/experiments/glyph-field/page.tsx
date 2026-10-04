@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import GlyphField, { GlyphFieldParams } from "./GlyphField";
 import ControlPanel, { Control } from "../_lib/ControlPanel";
+import { BACKDROP, backLink, pill } from "../_lib/chrome";
 
 const PRESETS: Record<string, Partial<GlyphFieldParams>> = {
   ripple: { waveSpeed: 0.5, damping: 0.002 },
@@ -338,7 +339,7 @@ export default function GlyphFieldPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#050505",
+        background: BACKDROP,
       }}
     >
       <div
@@ -398,19 +399,7 @@ export default function GlyphFieldPage() {
       )}
 
       {!uiHidden && (
-        <Link
-          href="/experiments"
-          style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            color: "rgba(255,255,255,0.35)",
-            fontFamily: "monospace",
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            textDecoration: "none",
-          }}
-        >
+        <Link href="/experiments" style={backLink}>
           ← EXPERIMENTS
         </Link>
       )}
@@ -426,34 +415,14 @@ export default function GlyphFieldPage() {
       >
         <button
           onClick={() => setUiHidden((v) => !v)}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(0,0,0,0.25)",
-            color: "black",
-            fontFamily: "monospace",
-            fontSize: 10,
-            letterSpacing: "0.06em",
-            padding: "6px 10px",
-            borderRadius: 2,
-            cursor: "pointer",
-          }}
+          style={pill}
           title="Toggle UI (H)"
         >
           {uiHidden ? "SHOW UI" : "HIDE UI"}
         </button>
         <button
           onClick={toggleFullscreen}
-          style={{
-            background: "transparent",
-            border: "1px solid rgba(0,0,0,0.25)",
-            color: "black",
-            fontFamily: "monospace",
-            fontSize: 10,
-            letterSpacing: "0.06em",
-            padding: "6px 10px",
-            borderRadius: 2,
-            cursor: "pointer",
-          }}
+          style={pill}
           title="Toggle fullscreen (F)"
         >
           {isFullscreen ? "EXIT FULLSCREEN" : "FULLSCREEN"}

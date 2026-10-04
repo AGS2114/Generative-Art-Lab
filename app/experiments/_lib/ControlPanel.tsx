@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
+import MacWindow from "./mac/Window";
 
 interface SliderControl {
   type: "slider";
@@ -34,7 +35,6 @@ interface ColorControl {
   type: "color";
   key: string;
   label: string;
-  /** Hex string, e.g. "#ff8a65". */
   value: string;
   onChange: (hex: string) => void;
 }
@@ -68,23 +68,6 @@ interface ControlPanelProps {
   children?: ReactNode;
 }
 
-const panelStyle: React.CSSProperties = {
-  position: "absolute",
-  top: 60,
-  right: 16,
-  width: 280,
-  background: "rgba(4, 4, 4, 0.6)",
-  backdropFilter: "blur(6px)",
-  WebkitBackdropFilter: "blur(6px)",
-  border: "1px solid rgba(255, 255, 255, 0.12)",
-  borderRadius: 4,
-  padding: "18px 20px",
-  fontFamily: "monospace",
-  color: "#e8e8e8",
-  maxHeight: "calc(100vh - 96px)",
-  overflowY: "auto",
-};
-
 const labelRowStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
@@ -92,31 +75,26 @@ const labelRowStyle: React.CSSProperties = {
   marginBottom: 4,
 };
 
-const labelStyle: React.CSSProperties = { fontSize: 12, color: "#d8d8d8" };
-const valueStyle: React.CSSProperties = { fontSize: 11, color: "#b5b5b5" };
-
-const pillButtonStyle: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid #3a3a3a",
-  color: "#d0d0d0",
-  fontFamily: "monospace",
-  fontSize: 11,
-  letterSpacing: "0.04em",
-  padding: "6px 10px",
-  borderRadius: 2,
-  cursor: "pointer",
+const labelStyle: React.CSSProperties = { fontSize: 13, color: "var(--text)" };
+const valueStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontFamily: "var(--font-mono)",
+  color: "var(--text-muted)",
 };
 
-const selectStyle: React.CSSProperties = {
-  width: "100%",
-  background: "#111",
-  color: "#c9c9c9",
-  border: "1px solid #3a3a3a",
-  borderRadius: 2,
-  padding: "4px 6px",
-  fontFamily: "monospace",
-  fontSize: 11,
-};
+function Triangle({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      fill="currentColor"
+      style={{ flex: "none", opacity: 0.6 }}
+    >
+      {open ? <path d="M0 2h10L5 9z" /> : <path d="M2 0v10l7-5z" />}
+    </svg>
+  );
+}
 
 function ControlRow({ c }: { c: Control }) {
   const [open, setOpen] = useState(
@@ -126,37 +104,31 @@ function ControlRow({ c }: { c: Control }) {
   if (c.type === "group") {
     return (
       <div
-        style={{
-          marginBottom: 12,
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 3,
-          padding: open ? "10px 12px 2px" : "8px 12px",
-        }}
+        className="mac-group"
+        style={{ padding: open ? "10px 12px 0" : "8px 12px" }}
       >
         <button
           onClick={() => setOpen((o) => !o)}
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            gap: 8,
             width: "100%",
             background: "transparent",
             border: "none",
             padding: 0,
             cursor: "pointer",
-            fontFamily: "monospace",
-            fontSize: 12,
-            color: "#d8d8d8",
+            font: "inherit",
+            fontSize: 14,
+            color: "inherit",
           }}
         >
+          <Triangle open={open} />
           <span>{c.label}</span>
-          <span style={{ fontSize: 10, color: "#8a8a8a" }}>
-            {open ? "\u2212" : "+"}
-          </span>
         </button>
 
         {open && (
-          <div style={{ marginTop: 12 }}>
+          <div style={{ marginTop: 10 }}>
             {c.controls.map((child) => (
               <ControlRow key={child.key} c={child} />
             ))}
@@ -167,7 +139,7 @@ function ControlRow({ c }: { c: Control }) {
   }
 
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div style={{ marginBottom: 12 }}>
       {c.type === "slider" && (
         <>
           <div style={labelRowStyle}>
@@ -175,26 +147,32 @@ function ControlRow({ c }: { c: Control }) {
             <span style={valueStyle}>{c.value}</span>
           </div>
           <input
+            className="mac-range"
+            style={
+              {
+                "--pct": `${((c.value - c.min) / (c.max - c.min)) * 100}%`,
+              } as React.CSSProperties
+            }
             type="range"
             min={c.min}
             max={c.max}
             step={c.step ?? (c.max - c.min) / 100}
             value={c.value}
             onChange={(e) => c.onChange(Number(e.target.value))}
-            style={{ width: "100%" }}
           />
         </>
       )}
 
       {c.type === "toggle" && (
-        <div style={labelRowStyle}>
+        <label style={{ ...labelRowStyle, cursor: "pointer" }}>
           <span style={labelStyle}>{c.label}</span>
           <input
+            className="mac-check"
             type="checkbox"
             checked={c.value}
             onChange={(e) => c.onChange(e.target.checked)}
           />
-        </div>
+        </label>
       )}
 
       {c.type === "select" && (
@@ -203,9 +181,9 @@ function ControlRow({ c }: { c: Control }) {
             <span style={labelStyle}>{c.label}</span>
           </div>
           <select
+            className="mac-select"
             value={c.value}
             onChange={(e) => c.onChange(e.target.value)}
-            style={selectStyle}
           >
             {c.options.map((opt) => (
               <option key={opt} value={opt}>
@@ -221,27 +199,12 @@ function ControlRow({ c }: { c: Control }) {
           <span style={labelStyle}>{c.label}</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input
+              className="mac-swatch"
               type="color"
               value={c.value}
               onChange={(e) => c.onChange(e.target.value)}
-              style={{
-                width: 28,
-                height: 20,
-                border: "1px solid #3a3a3a",
-                borderRadius: 2,
-                background: "none",
-                padding: 0,
-                cursor: "pointer",
-              }}
             />
-            <span
-              style={{
-                fontSize: 11,
-                color: "#b5b5b5",
-                minWidth: 60,
-                textAlign: "right",
-              }}
-            >
+            <span style={{ ...valueStyle, minWidth: 60, textAlign: "right" }}>
               {c.value}
             </span>
           </div>
@@ -251,7 +214,7 @@ function ControlRow({ c }: { c: Control }) {
       {c.type === "buttonGroup" && (
         <>
           {c.label && (
-            <div style={{ ...labelRowStyle, marginBottom: 10 }}>
+            <div style={{ ...labelRowStyle, marginBottom: 8 }}>
               <span style={labelStyle}>{c.label}</span>
             </div>
           )}
@@ -259,10 +222,11 @@ function ControlRow({ c }: { c: Control }) {
             {c.buttons.map((btn) => (
               <button
                 key={btn.label}
+                className="mac-btn"
                 onClick={btn.onClick}
-                style={pillButtonStyle}
+                style={{ fontSize: 13, padding: "5px 11px" }}
               >
-                {btn.label.toUpperCase()}
+                {btn.label}
               </button>
             ))}
           </div>
@@ -273,9 +237,10 @@ function ControlRow({ c }: { c: Control }) {
 }
 
 /**
- * ControlPanel - the single shared control surface for every /experiments sketch. Sketches declare controls as data (sliders, toggles, selects,
- * colour swatches, button rows, and collapsible groups) so each one gets identical chrome, spacing, and show/hide behaviour. Groups keep long
- * parameter lists from turning the panel into one endless scroll.
+ * ControlPanel - the single shared control surface for every /experiments sketch.
+ * Sketches declare controls as data (sliders, toggles, selects, colour swatches,
+ * button rows, collapsible groups). Rendered as a draggable classic-Mac window:
+ * drag the title bar, double-click it to roll the window up, close box to hide.
  */
 export default function ControlPanel({
   title,
@@ -284,47 +249,39 @@ export default function ControlPanel({
 }: ControlPanelProps) {
   const [visible, setVisible] = useState(true);
 
-  return (
-    <>
+  if (!visible) {
+    return (
       <button
-        onClick={() => setVisible((v) => !v)}
+        className="mac-btn"
+        onClick={() => setVisible(true)}
         style={{
           position: "absolute",
-          top: 16,
-          right: 16,
-          background: "transparent",
-          border: "none",
-          color: "DARKGRAY",
-          fontFamily: "monospace",
-          fontSize: 11,
-          letterSpacing: "0.08em",
-          cursor: "pointer",
-          padding: 4,
+          top: 12,
+          right: 12,
+          zIndex: 20,
+          fontSize: 13,
+          boxShadow: "0 6px 18px rgba(0,0,0,0.45)",
         }}
       >
-        {visible ? "HIDE CONTROLS" : "SHOW CONTROLS"}
+        Control Panel
       </button>
+    );
+  }
 
-      {visible && (
-        <div style={panelStyle}>
-          <div
-            style={{
-              fontSize: 12,
-              letterSpacing: "0.12em",
-              color: "#e8e8e8",
-              marginBottom: 16,
-            }}
-          >
-            {title.toUpperCase()}
-          </div>
-
-          {controls.map((c) => (
-            <ControlRow key={c.key} c={c} />
-          ))}
-
-          {children}
-        </div>
-      )}
-    </>
+  return (
+    <MacWindow
+      title="Control Panel"
+      onClose={() => setVisible(false)}
+      style={{ top: 12, right: 16, width: 300 }}
+      bodyStyle={{ padding: "16px 16px 4px", maxHeight: "calc(100vh - 110px)" }}
+    >
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
+        {title}
+      </div>
+      {controls.map((c) => (
+        <ControlRow key={c.key} c={c} />
+      ))}
+      {children}
+    </MacWindow>
   );
 }
